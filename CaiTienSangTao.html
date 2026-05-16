@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<title>Hệ thống Giám sát & Cảnh báo Thay đổi API</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="deck-stage.js"></script>
+<style>
+  :root {
+    /* Type scale @ 1920x1080 */
+    --type-eyebrow: 24px;
+    --type-title: 72px;
+    --type-title-lg: 92px;
+    --type-subtitle: 44px;
+    --type-body: 32px;
+    --type-small: 26px;
+    --type-huge: 168px;
+    --type-mono: 24px;
+
+    /* Spacing */
+    --pad-top: 96px;
+    --pad-bottom: 88px;
+    --pad-x: 120px;
+    --gap-title: 56px;
+    --gap-item: 28px;
+    --gap-section: 72px;
+
+    /* Palette — warm parchment + ink + signal amber */
+    --paper: #F2EEE5;
+    --paper-2: #E8E2D4;
+    --ink: #16171C;
+    --ink-2: #2A2B33;
+    --ink-soft: #4B4D58;
+    --rule: rgba(22,23,28,0.14);
+    --rule-2: rgba(22,23,28,0.28);
+    --amber: #D08327;
+    --amber-soft: #F4D9A8;
+    --jade: #3F7A5E;
+    --crimson: #B23C2C;
+    --ink-on-dark: #F2EEE5;
+    --muted-on-dark: rgba(242,238,229,0.62);
+  }
+
+  html, body { margin: 0; padding: 0; background: #000; font-family: 'Manrope', sans-serif; color: var(--ink); }
+  deck-stage { background: #000; }
+
+  section {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Manrope', sans-serif;
+    font-feature-settings: "ss01", "cv11";
+    overflow: hidden;
+    position: relative;
+  }
+  section.ink { background: var(--ink); color: var(--ink-on-dark); }
+  section.ink .rule { border-color: rgba(242,238,229,0.16); }
+  section.ink .ink-soft { color: var(--muted-on-dark); }
+
+  /* Slide frame */
+  .frame {
+    position: absolute; inset: 0;
+    padding: var(--pad-top) var(--pad-x) var(--pad-bottom);
+    display: flex; flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  /* Chrome row at top */
+  .chrome {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: var(--type-mono);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+  }
+  section.ink .chrome { color: var(--muted-on-dark); }
+  .chrome .left { display: flex; gap: 24px; align-items: baseline; }
+  .chrome .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--amber); display: inline-block; transform: translateY(1px); }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: var(--type-eyebrow);
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+
+  h1, h2, h3, p, ul, ol, li { margin: 0; padding: 0; }
+  h1 {
+    font-size: var(--type-title);
+    font-weight: 600;
+    line-height: 1.04;
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+  }
+  h1.xl { font-size: var(--type-title-lg); }
+  h2 {
+    font-size: var(--type-subtitle);
+    font-weight: 500;
+    line-height: 1.18;
+    letter-spacing: -0.012em;
+  }
+  .body { font-size: var(--type-body); line-height: 1.42; font-weight: 400; }
+  .small { font-size: var(--type-small); line-height: 1.42; font-weight: 400; color: var(--ink-soft); }
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: var(--type-mono); letter-spacing: 0.02em; }
+
+  .rule { border: none; border-top: 1px solid var(--rule); margin: 0; }
+
+  .stack { display: flex; flex-direction: column; }
+  .row { display: flex; }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 12px;
+    border: 1px solid var(--rule-2);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    color: var(--ink-2);
+    background: rgba(255,255,255,0.4);
+  }
+  section.ink .pill { border-color: rgba(242,238,229,0.28); color: var(--ink-on-dark); background: rgba(255,255,255,0.04); }
+
+  .tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .tag.safe { background: rgba(63,122,94,0.14); color: var(--jade); }
+  .tag.warn { background: rgba(208,131,39,0.18); color: #8A5615; }
+  .tag.break { background: rgba(178,60,44,0.14); color: var(--crimson); }
+  .tag.eol { background: var(--ink); color: var(--paper); }
+
+  /* Slide-specific */
+  .title-block .super {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: var(--type-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 36px;
+  }
+
+  /* Number / huge figures */
+  .figure {
+    font-family: 'Instrument Serif', serif;
+    font-size: var(--type-huge);
+    line-height: 0.92;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+  }
+  .figure.it { font-style: italic; }
+
+  /* Card grids */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+
+  .card {
+    border: 1px solid var(--rule);
+    padding: 36px 36px 40px;
+    background: rgba(255,255,255,0.32);
+    display: flex; flex-direction: column; gap: 16px;
+    position: relative;
+  }
+  section.ink .card { background: rgba(255,255,255,0.03); border-color: rgba(242,238,229,0.16); }
+  .card .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    letter-spacing: 0.08em;
+    color: var(--amber);
+  }
+  .card h3 {
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+  }
+  .card p { font-size: 24px; line-height: 1.5; color: var(--ink-soft); }
+  section.ink .card p { color: var(--muted-on-dark); }
+
+  /* Title slide ornamentation */
+  .ornament {
+    position: absolute;
+    border: 1px solid var(--rule);
+  }
+
+  /* Slide footer */
+  .foot {
+    margin-top: auto;
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  section.ink .foot { border-color: rgba(242,238,229,0.16); color: var(--muted-on-dark); }
+</style>
+</head>
+<body>
+
+<deck-stage width="1920" height="1080">
+
+<!-- ============================== 01 — TITLE ============================== -->
+<section data-screen-label="01 Tiêu đề" class="ink">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>CaiTienSangTao · v1.0</span></div>
+      <div>16 / 05 / 2026</div>
+    </div>
+
+    <div class="stack" style="margin-top: 220px; gap: 56px;">
+      <div class="super" style="color: var(--amber); font-family:'JetBrains Mono',monospace; font-size:24px; letter-spacing:.16em; text-transform:uppercase;">Đề xuất cải tiến · Sáng kiến nội bộ</div>
+      <h1 class="xl" style="max-width: 1500px;">
+        Hệ thống Giám sát<br/>
+        &amp; Cảnh báo Thay đổi<br/>
+        <span style="font-family:'Instrument Serif', serif; font-style: italic; font-weight: 400; color: var(--amber);">API, SDK &amp; Thư viện</span>
+      </h1>
+      <div class="body ink-soft" style="max-width: 1100px; font-size: 32px; color: var(--muted-on-dark);">
+        Nền tảng SaaS phát hiện sớm Breaking Change, quản lý vòng đời thư viện và chống nhiễu thông báo cho các đội phát triển phần mềm doanh nghiệp.
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>Trình bày · Nhóm CaiTienSangTao</div>
+      <div>01 / 15</div>
+    </div>
+  </div>
+
+  <!-- decorative ruled lines -->
+  <div class="ornament" style="left: 120px; right: 120px; top: 200px; height: 1px;"></div>
+</section>
+
+<!-- ============================== 02 — PAIN POINTS ============================== -->
+<section data-screen-label="02 Bối cảnh">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>02 · Bối cảnh</span></div>
+      <div>Vấn đề thực tế</div>
+    </div>
+
+    <div class="stack" style="margin-top: 80px; gap: var(--gap-title);">
+      <div class="eyebrow">Bốn nỗi đau</div>
+      <h1 style="max-width: 1500px;">
+        Mỗi tuần, đội kỹ thuật phải <em style="font-family:'Instrument Serif',serif; font-weight:400;">đoán</em>
+        xem thư viện nào vừa thay đổi.
+      </h1>
+    </div>
+
+    <div class="grid-4" style="margin-top: 80px;">
+      <div class="card">
+        <span class="num">01</span>
+        <h3>Cập nhật thủ công</h3>
+        <p>Đọc changelog mỗi tuần tốn thời gian và dễ bỏ sót lỗi bảo mật quan trọng.</p>
+      </div>
+      <div class="card">
+        <span class="num">02</span>
+        <h3>Ma trận dependency</h3>
+        <p>Hàng trăm thư viện chéo nhau khiến việc theo dõi changelog gần như bất khả thi.</p>
+      </div>
+      <div class="card">
+        <span class="num">03</span>
+        <h3>Nhiễu loạn thông báo</h3>
+        <p>Cảnh báo không quan trọng, các bản lỗi bị rollback vẫn gửi mail — kỹ sư mất niềm tin.</p>
+      </div>
+      <div class="card">
+        <span class="num">04</span>
+        <h3>Breaking Change ẩn</h3>
+        <p>Thiếu công cụ tự động phát hiện thay đổi cấu trúc API gây lỗi runtime ở production.</p>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>Pain points</div>
+      <div>02 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 03 — VISION ============================== -->
+<section data-screen-label="03 Tầm nhìn" class="ink">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>03 · Tầm nhìn</span></div>
+      <div>Giải pháp đề xuất</div>
+    </div>
+
+    <div class="row" style="margin-top: 100px; gap: 100px; align-items: flex-end;">
+      <div style="flex: 0 0 720px;">
+        <div class="figure it" style="color: var(--amber);">Một</div>
+        <div class="body" style="font-size: 36px; color: var(--ink-on-dark); margin-top: 24px; line-height: 1.3;">
+          nền tảng SaaS duy nhất để<br/>
+          theo dõi mọi phụ thuộc.
+        </div>
+      </div>
+      <div class="stack" style="flex: 1; gap: 36px; padding-bottom: 24px;">
+        <div class="body" style="font-size: 30px; color: var(--ink-on-dark); max-width: 760px; line-height: 1.45;">
+          Tự động phát hiện thay đổi của thư viện bên thứ ba và các dịch vụ API phụ thuộc — gửi cảnh báo sớm cho đúng người, đúng thời điểm.
+        </div>
+        <div class="row" style="gap: 16px; flex-wrap: wrap;">
+          <span class="pill">GitHub Releases</span>
+          <span class="pill">OpenAPI / Swagger</span>
+          <span class="pill">Private internal API</span>
+          <span class="pill">EOL / EOS tracking</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top: 100px; gap: 80px;">
+      <div style="flex: 1;">
+        <div class="eyebrow" style="color: var(--amber);">Đối tượng</div>
+        <div class="body" style="font-size: 28px; margin-top: 18px; color: var(--ink-on-dark);">Đội phát triển sản phẩm, DevOps, kiến trúc sư hệ thống</div>
+      </div>
+      <div style="flex: 1;">
+        <div class="eyebrow" style="color: var(--amber);">Mô hình</div>
+        <div class="body" style="font-size: 28px; margin-top: 18px; color: var(--ink-on-dark);">Multi-tenant SaaS, có Public Catalog cộng đồng</div>
+      </div>
+      <div style="flex: 1;">
+        <div class="eyebrow" style="color: var(--amber);">Cam kết</div>
+        <div class="body" style="font-size: 28px; margin-top: 18px; color: var(--ink-on-dark);">Phát hiện sớm, gộp thông minh, không gây nhiễu</div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>Vision statement</div>
+      <div>03 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 04 — FOUR PILLARS OVERVIEW ============================== -->
+<section data-screen-label="04 Bốn module">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>04 · Kiến trúc chức năng</span></div>
+      <div>4 modules · 1 vòng tròn</div>
+    </div>
+
+    <div class="stack" style="margin-top: 60px; gap: 40px;">
+      <div class="eyebrow">Bốn trụ cột</div>
+      <h1 style="max-width: 1500px;">Một vòng khép kín: thu thập, băm, phân tích, gửi.</h1>
+    </div>
+
+    <div class="grid-4" style="margin-top: 100px;">
+      <div class="card" style="border-color: var(--rule-2);">
+        <span class="num">M1 · Targets</span>
+        <h3>Quản lý mục tiêu giám sát</h3>
+        <p>Chợ API cộng đồng, chuẩn hoá URL, hỗ trợ private target có xác thực mã hoá.</p>
+      </div>
+      <div class="card" style="border-color: var(--rule-2);">
+        <span class="num">M2 · Fetcher</span>
+        <h3>Engine thu thập dữ liệu</h3>
+        <p>Quét theo chu kỳ dày nhất, băm hash để chỉ lưu khi nội dung thực sự thay đổi.</p>
+      </div>
+      <div class="card" style="border-color: var(--rule-2);">
+        <span class="num">M3 · Diffing</span>
+        <h3>Engine phân tích thay đổi</h3>
+        <p>So sánh OpenAPI, bóc tách changelog, phân loại Safe / Warning / Breaking.</p>
+      </div>
+      <div class="card" style="border-color: var(--rule-2);">
+        <span class="num">M4 · Notifier</span>
+        <h3>Cảnh báo thông minh</h3>
+        <p>Gộp thông báo theo chu kỳ, chống rollback noise, EOL early-warning.</p>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top: 64px; gap: 28px; align-items: center;">
+      <span class="mono" style="color: var(--ink-soft);">FLOW</span>
+      <span class="mono">Target → Fetch → Hash → Diff → Severity → Notify</span>
+    </div>
+
+    <div class="foot">
+      <div>Functional architecture</div>
+      <div>04 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 05 — M1 TARGET MGMT ============================== -->
+<section data-screen-label="05 Module 1 Target">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>05 · Module 1</span></div>
+      <div>Target Management</div>
+    </div>
+
+    <div class="row" style="margin-top: 60px; gap: 80px; align-items: flex-start;">
+      <div style="flex: 0 0 720px;">
+        <div class="eyebrow">Module 1</div>
+        <h1 style="margin-top: 36px; max-width: 700px;">Quản lý mục tiêu &amp; Chợ API cộng đồng.</h1>
+        <div class="body" style="margin-top: 36px; color: var(--ink-soft); max-width: 640px; font-size: 28px;">
+          Người dùng tự thêm target hoặc subscribe vào target sẵn có. Một URL — nhiều người theo dõi.
+        </div>
+      </div>
+
+      <div class="stack" style="flex: 1; gap: 32px;">
+        <div class="row" style="gap: 24px; align-items: flex-start; padding: 28px 0; border-top: 1px solid var(--rule);">
+          <span class="mono" style="flex: 0 0 64px; color: var(--amber);">01</span>
+          <div>
+            <div class="body" style="font-weight: 600; font-size: 28px;">Public Catalog &amp; Deduplication</div>
+            <div class="small" style="margin-top: 8px;">Tìm kiếm và subscribe vào URL / Repo mà người dùng khác đã thêm. Một request quét — phục vụ hàng nghìn subscriber.</div>
+          </div>
+        </div>
+        <div class="row" style="gap: 24px; align-items: flex-start; padding: 28px 0; border-top: 1px solid var(--rule);">
+          <span class="mono" style="flex: 0 0 64px; color: var(--amber);">02</span>
+          <div>
+            <div class="body" style="font-weight: 600; font-size: 28px;">Chuẩn hoá URL tự động</div>
+            <div class="small" style="margin-top: 8px;">Hỗ trợ OpenAPI (JSON/YAML) và GitHub repo (<span class="mono">owner/repo</span>). Hệ thống normalize để chống trùng lặp.</div>
+          </div>
+        </div>
+        <div class="row" style="gap: 24px; align-items: flex-start; padding: 28px 0; border-top: 1px solid var(--rule);">
+          <span class="mono" style="flex: 0 0 64px; color: var(--amber);">03</span>
+          <div>
+            <div class="body" style="font-weight: 600; font-size: 28px;">Private Target có xác thực</div>
+            <div class="small" style="margin-top: 8px;">API nội bộ được đánh dấu Private; API Key &amp; Bearer Token mã hoá ở mức database, dùng để quét tài nguyên có auth.</div>
+          </div>
+        </div>
+        <div class="row" style="gap: 24px; align-items: flex-start; padding: 28px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);">
+          <span class="mono" style="flex: 0 0 64px; color: var(--amber);">04</span>
+          <div>
+            <div class="body" style="font-weight: 600; font-size: 28px;">Xác thực tồn tại</div>
+            <div class="small" style="margin-top: 8px;">Kiểm tra <span class="mono">HTTP 200 OK</span> trước khi cho phép lưu — không có URL chết trong hệ thống.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>M1 · Target Management</div>
+      <div>05 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 06 — M2 FETCHER ============================== -->
+<section data-screen-label="06 Module 2 Fetcher" class="ink">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>06 · Module 2</span></div>
+      <div>Fetcher Engine</div>
+    </div>
+
+    <div class="stack" style="margin-top: 60px; gap: 40px;">
+      <div class="eyebrow">Module 2</div>
+      <h1 style="max-width: 1500px;">Tải <span style="font-family:'Instrument Serif',serif; font-style: italic; color: var(--amber);">một lần</span>, phục vụ hàng nghìn.</h1>
+    </div>
+
+    <div class="grid-2" style="margin-top: 60px; gap: 56px;">
+      <div class="card">
+        <span class="num">QUÉT CHUẨN CAO NHẤT</span>
+        <h3 style="color: var(--ink-on-dark);">Một request — vô số subscriber</h3>
+        <p style="color: var(--muted-on-dark);">Hệ thống tự tính mốc thời gian dày nhất trong số người đăng ký một target, đảm bảo chỉ thực hiện một request ra ngoài cho toàn bộ subscriber.</p>
+        <div class="row" style="margin-top: 16px; gap: 16px; flex-wrap: wrap;">
+          <span class="pill">freq = min(daily, weekly...)</span>
+          <span class="pill">1 fetch → N notify</span>
+        </div>
+      </div>
+      <div class="card">
+        <span class="num">HASH FIRST · STORE SECOND</span>
+        <h3 style="color: var(--ink-on-dark);">Băm trước khi lưu</h3>
+        <p style="color: var(--muted-on-dark);">Dùng MD5 / SHA256 ngay khi tải về. Chỉ lưu file vào Blob Storage và kích hoạt Diffing Engine nếu hash thay đổi so với phiên bản trước.</p>
+        <div class="row" style="margin-top: 16px; gap: 16px; flex-wrap: wrap;">
+          <span class="pill">hash unchanged → skip</span>
+          <span class="pill">hash changed → diff</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top: 40px; gap: 48px; align-items: baseline;">
+      <div class="figure it" style="color: var(--amber); font-size: 110px;">~98%</div>
+      <div class="body" style="font-size: 26px; color: var(--muted-on-dark); max-width: 700px; padding-bottom: 8px;">
+        request và storage được tiết kiệm trong các chu kỳ mà target không thay đổi nội dung thực tế.
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>M2 · Fetcher Engine</div>
+      <div>06 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 07 — M3 DIFFING ============================== -->
+<section data-screen-label="07 Module 3 Diffing">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>07 · Module 3</span></div>
+      <div>Diffing Engine</div>
+    </div>
+
+    <div class="stack" style="margin-top: 60px; gap: 40px;">
+      <div class="eyebrow">Module 3</div>
+      <h1 style="max-width: 1500px;">Phát hiện <em style="font-family:'Instrument Serif',serif; font-weight:400;">Breaking Change</em> trước khi production phát hiện.</h1>
+    </div>
+
+    <div class="grid-2" style="margin-top: 80px; gap: 64px;">
+      <div class="stack" style="gap: 32px;">
+        <div class="row" style="gap: 16px; align-items: center;">
+          <span class="mono" style="color: var(--amber);">A ·</span>
+          <div class="body" style="font-size: 30px; font-weight: 600;">Phân tích OpenAPI</div>
+        </div>
+        <div class="stack" style="gap: 20px;">
+          <div class="row" style="gap: 20px; align-items: baseline;"><span class="mono" style="flex:0 0 36px;">›</span><div class="body" style="font-size: 26px;">Parse JSON / YAML thành object cấu trúc</div></div>
+          <div class="row" style="gap: 20px; align-items: baseline;"><span class="mono" style="flex:0 0 36px;">›</span><div class="body" style="font-size: 26px;">Phát hiện thêm / xoá endpoint, đổi method</div></div>
+          <div class="row" style="gap: 20px; align-items: baseline;"><span class="mono" style="flex:0 0 36px;">›</span><div class="body" style="font-size: 26px;">Theo dõi parameter <span class="mono">Optional → Required</span></div></div>
+          <div class="row" style="gap: 20px; align-items: baseline;"><span class="mono" style="flex:0 0 36px;">›</span><div class="body" style="font-size: 26px;">So sánh cấu trúc Response schema</div></div>
+        </div>
+      </div>
+      <div class="stack" style="gap: 32px;">
+        <div class="row" style="gap: 16px; align-items: center;">
+          <span class="mono" style="color: var(--amber);">B ·</span>
+          <div class="body" style="font-size: 30px; font-weight: 600;">Phân tích GitHub Release</div>
+        </div>
+        <div class="stack" style="gap: 20px;">
+          <div class="row" style="gap: 20px; align-items: baseline;"><span class="mono" style="flex:0 0 36px;">›</span><div class="body" style="font-size: 26px;">Lấy markdown từ changelog &amp; release notes</div></div>
+          <div class="row" style="gap: 20px; align-items: baseline;"><span class="mono" style="flex:0 0 36px;">›</span><div class="body" style="font-size: 26px;">Regex bóc tách Features / Bug Fixes</div></div>
+          <div class="row" style="gap: 20px; align-items: baseline;"><span class="mono" style="flex:0 0 36px;">›</span><div class="body" style="font-size: 26px;">Tích hợp LLM để phân loại Breaking Changes</div></div>
+          <div class="row" style="gap: 20px; align-items: baseline;"><span class="mono" style="flex:0 0 36px;">›</span><div class="body" style="font-size: 26px;">Sinh tóm tắt ngắn gọn cho từng bản phát hành</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- severity tags -->
+    <div class="row" style="margin-top: 80px; gap: 40px; align-items: center; padding-top: 36px; border-top: 1px solid var(--rule);">
+      <span class="mono" style="color: var(--ink-soft);">SEVERITY OUTPUT</span>
+      <span class="tag safe">Safe</span>
+      <span class="tag warn">Warning</span>
+      <span class="tag break">Breaking Change</span>
+    </div>
+
+    <div class="foot">
+      <div>M3 · Diffing Engine</div>
+      <div>07 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 08 — M4 NOTIFIER ============================== -->
+<section data-screen-label="08 Module 4 Notifier">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>08 · Module 4</span></div>
+      <div>Smart Notifier</div>
+    </div>
+
+    <div class="stack" style="margin-top: 60px; gap: 40px;">
+      <div class="eyebrow">Module 4</div>
+      <h1 style="max-width: 1500px;">Cảnh báo đúng việc — không đánh thức kỹ sư vô ích.</h1>
+    </div>
+
+    <div class="grid-3" style="margin-top: 60px;">
+      <div class="card">
+        <span class="num">FREQUENCY</span>
+        <h3>Tần suất linh hoạt</h3>
+        <p>Mỗi user chọn nhận cảnh báo theo chu kỳ Daily hoặc Weekly cho từng target.</p>
+      </div>
+      <div class="card">
+        <span class="num">AGGREGATION</span>
+        <h3>Gộp thông báo</h3>
+        <p>Nhiều bản cập nhật trong cùng chu kỳ được tổng hợp thành một email duy nhất.</p>
+      </div>
+      <div class="card" style="background: rgba(208,131,39,0.08); border-color: rgba(208,131,39,0.35);">
+        <span class="num" style="color: var(--crimson);">SMART DIGEST</span>
+        <h3>Chặn rollback noise</h3>
+        <p>So sánh hash đầu &amp; cuối chu kỳ. Nếu trùng, hệ thống tự bỏ qua email.</p>
+      </div>
+    </div>
+
+    <!-- timeline -->
+    <div class="stack" style="margin-top: 48px; gap: 14px;">
+      <div class="mono" style="color: var(--ink-soft);">VÍ DỤ · CHU KỲ TUẦN</div>
+      <div class="row" style="gap: 0; align-items: stretch; border: 1px solid var(--rule); background: rgba(255,255,255,0.4);">
+        <div style="flex: 1; padding: 18px 22px; border-right: 1px solid var(--rule);">
+          <div class="mono" style="color: var(--ink-soft);">T2</div>
+          <div class="body" style="font-size: 24px; margin-top: 6px;">hash <span class="mono">a1f2</span></div>
+        </div>
+        <div style="flex: 1; padding: 18px 22px; border-right: 1px solid var(--rule);">
+          <div class="mono" style="color: var(--amber);">T3 · bản lỗi</div>
+          <div class="body" style="font-size: 24px; margin-top: 6px;">hash <span class="mono">c93b</span></div>
+        </div>
+        <div style="flex: 1; padding: 18px 22px; border-right: 1px solid var(--rule);">
+          <div class="mono" style="color: var(--amber);">T5 · rollback</div>
+          <div class="body" style="font-size: 24px; margin-top: 6px;">hash <span class="mono">a1f2</span></div>
+        </div>
+        <div style="flex: 1.4; padding: 18px 22px; background: var(--ink); color: var(--paper);">
+          <div class="mono" style="color: var(--amber);">CN · kết quả</div>
+          <div class="body" style="font-size: 24px; margin-top: 6px;">Không gửi email — không có thay đổi thực sự.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>M4 · Smart Notifier</div>
+      <div>08 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 09 — EOL/EOS INNOVATION INTRO ============================== -->
+<section data-screen-label="09 Cải tiến EOL" class="ink">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>09 · Cải tiến đề xuất</span></div>
+      <div>End-of-Life / End-of-Support</div>
+    </div>
+
+    <div class="row" style="margin-top: 100px; gap: 100px; align-items: flex-end;">
+      <div style="flex: 0 0 760px;">
+        <div class="figure it" style="color: var(--amber);">EOL</div>
+        <div class="body" style="font-size: 30px; color: var(--muted-on-dark); margin-top: 28px; line-height: 1.35; max-width: 680px;">
+          Phần lớn rủi ro bảo mật đến từ thư viện <em style="font-family:'Instrument Serif', serif; font-style: italic;">vẫn chạy</em> nhưng đã hết support — không phải từ bản update mới.
+        </div>
+      </div>
+
+      <div class="stack" style="flex: 1; gap: 36px; padding-bottom: 24px;">
+        <div class="eyebrow" style="color: var(--amber);">Sáng kiến cải tiến</div>
+        <h1 class="xl" style="max-width: 900px;">
+          Cảnh báo <em style="font-family:'Instrument Serif',serif; font-weight: 400; color: var(--amber);">trước khi</em> thư viện hết hỗ trợ — không chỉ khi có thay đổi.
+        </h1>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top: 110px; gap: 0; align-items: stretch; border: 1px solid rgba(242,238,229,0.18);">
+      <div style="flex: 1; padding: 36px 40px; border-right: 1px solid rgba(242,238,229,0.18);">
+        <div class="mono" style="color: var(--muted-on-dark);">HIỆN TẠI</div>
+        <div class="body" style="font-size: 28px; margin-top: 16px; color: var(--ink-on-dark); line-height: 1.4;">Chỉ cảnh báo khi có release / diff mới.</div>
+      </div>
+      <div style="flex: 1; padding: 36px 40px; border-right: 1px solid rgba(242,238,229,0.18);">
+        <div class="mono" style="color: var(--muted-on-dark);">VẤN ĐỀ</div>
+        <div class="body" style="font-size: 28px; margin-top: 16px; color: var(--ink-on-dark); line-height: 1.4;">Thư viện ngừng phát triển — vẫn “im lặng”.</div>
+      </div>
+      <div style="flex: 1.2; padding: 36px 40px; background: var(--amber); color: var(--ink);">
+        <div class="mono" style="color: var(--ink);">ĐỀ XUẤT</div>
+        <div class="body" style="font-size: 28px; margin-top: 16px; font-weight: 600; line-height: 1.4;">Theo dõi cả vòng đời, cảnh báo theo ngưỡng thời gian.</div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>Innovation · EOL Tracking</div>
+      <div>09 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 10 — EOL LABELING ============================== -->
+<section data-screen-label="10 Nhãn EOL">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>10 · Cải tiến · Cơ chế nhãn</span></div>
+      <div>EOL Label per Target</div>
+    </div>
+
+    <div class="stack" style="margin-top: 50px; gap: 28px;">
+      <div class="eyebrow">Cải tiến 1 / 2</div>
+      <h1 style="max-width: 1500px;">Gắn nhãn <span class="mono" style="font-size: 56px; background: var(--ink); color: var(--paper); padding: 4px 18px; border-radius: 6px;">Còn X tháng hỗ trợ</span> cho từng Target.</h1>
+      <div class="body small" style="font-size: 26px; max-width: 1100px;">Tương tự như mức độ severity — nhãn EOL trở thành thuộc tính bậc nhất của target, hiển thị mọi nơi.</div>
+    </div>
+
+    <!-- Target list demo -->
+    <div class="stack" style="margin-top: 44px; gap: 0; border: 1px solid var(--rule); background: rgba(255,255,255,0.4);">
+      <!-- header -->
+      <div class="row" style="padding: 18px 28px; border-bottom: 1px solid var(--rule); background: rgba(22,23,28,0.04);">
+        <div class="mono" style="flex: 2.4; color: var(--ink-soft);">TARGET</div>
+        <div class="mono" style="flex: 1; color: var(--ink-soft);">VERSION</div>
+        <div class="mono" style="flex: 1.2; color: var(--ink-soft);">SEVERITY</div>
+        <div class="mono" style="flex: 1.4; color: var(--ink-soft);">VÒNG ĐỜI</div>
+      </div>
+
+      <div class="row" style="padding: 18px 28px; border-bottom: 1px solid var(--rule); align-items: center;">
+        <div style="flex: 2.4;"><span class="mono" style="font-size: 24px;">github.com/dotnet/aspnetcore</span></div>
+        <div style="flex: 1;"><span class="mono" style="font-size: 24px;">8.0.4</span></div>
+        <div style="flex: 1.2;"><span class="tag safe">Safe</span></div>
+        <div style="flex: 1.4;"><span class="tag eol">Còn 18 tháng</span></div>
+      </div>
+      <div class="row" style="padding: 18px 28px; border-bottom: 1px solid var(--rule); align-items: center;">
+        <div style="flex: 2.4;"><span class="mono" style="font-size: 24px;">stripe.com/v1/openapi.json</span></div>
+        <div style="flex: 1;"><span class="mono" style="font-size: 24px;">2024-06-20</span></div>
+        <div style="flex: 1.2;"><span class="tag warn">Warning</span></div>
+        <div style="flex: 1.4;"><span class="tag eol" style="background: var(--jade); color: var(--paper);">Còn 24 tháng</span></div>
+      </div>
+      <div class="row" style="padding: 18px 28px; border-bottom: 1px solid var(--rule); align-items: center; background: rgba(208,131,39,0.06);">
+        <div style="flex: 2.4;"><span class="mono" style="font-size: 24px;">github.com/Microsoft/TypeScript</span></div>
+        <div style="flex: 1;"><span class="mono" style="font-size: 24px;">5.4.5</span></div>
+        <div style="flex: 1.2;"><span class="tag safe">Safe</span></div>
+        <div style="flex: 1.4;"><span class="tag eol" style="background: var(--amber); color: var(--ink);">Còn 5 tháng</span></div>
+      </div>
+      <div class="row" style="padding: 18px 28px; align-items: center; background: rgba(178,60,44,0.08);">
+        <div style="flex: 2.4;"><span class="mono" style="font-size: 24px;">github.com/legacy/auth-sdk</span></div>
+        <div style="flex: 1;"><span class="mono" style="font-size: 24px;">2.1.0</span></div>
+        <div style="flex: 1.2;"><span class="tag break">Breaking</span></div>
+        <div style="flex: 1.4;"><span class="tag eol" style="background: var(--crimson); color: var(--paper);">Còn 21 ngày</span></div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top: 24px; gap: 32px; align-items: baseline;">
+      <span class="mono" style="color: var(--ink-soft);">NGUỒN DỮ LIỆU</span>
+      <span class="pill">endoflife.date</span>
+      <span class="pill">Vendor support matrix</span>
+      <span class="pill">GitHub release cadence</span>
+    </div>
+
+    <div class="foot">
+      <div>Innovation 1 · Lifecycle labels</div>
+      <div>10 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 11 — THRESHOLD EARLY WARNING ============================== -->
+<section data-screen-label="11 Cảnh báo theo ngưỡng">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>11 · Cải tiến · Cảnh báo theo ngưỡng</span></div>
+      <div>Threshold-based Early Warning</div>
+    </div>
+
+    <div class="stack" style="margin-top: 60px; gap: 36px;">
+      <div class="eyebrow">Cải tiến 2 / 2</div>
+      <h1 style="max-width: 1600px;">Ba lần nhắc — đủ thời gian để có kế hoạch nâng cấp.</h1>
+    </div>
+
+    <!-- Three threshold cards -->
+    <div class="grid-3" style="margin-top: 60px;">
+      <div class="card" style="border-color: rgba(63,122,94,0.35); background: rgba(63,122,94,0.06);">
+        <span class="num" style="color: var(--jade);">T-6 THÁNG</span>
+        <div class="figure" style="font-size: 96px; color: var(--jade); line-height: 1;">6</div>
+        <h3>Cảnh báo định hướng</h3>
+        <p>Thông báo để kiến trúc sư đưa vào roadmap quý sau. Mức độ: <strong>Info</strong>.</p>
+      </div>
+      <div class="card" style="border-color: rgba(208,131,39,0.45); background: rgba(208,131,39,0.08);">
+        <span class="num" style="color: var(--amber);">T-3 THÁNG</span>
+        <div class="figure" style="font-size: 96px; color: var(--amber); line-height: 1;">3</div>
+        <h3>Cảnh báo lập kế hoạch</h3>
+        <p>Tag PM &amp; tech lead vào ticket. Mức độ: <strong>Warning</strong>, lên backlog.</p>
+      </div>
+      <div class="card" style="border-color: rgba(178,60,44,0.45); background: rgba(178,60,44,0.08);">
+        <span class="num" style="color: var(--crimson);">T-1 THÁNG</span>
+        <div class="figure" style="font-size: 96px; color: var(--crimson); line-height: 1;">1</div>
+        <h3>Cảnh báo khẩn cấp</h3>
+        <p>Email + in-app + tích hợp Slack. Mức độ: <strong>Critical</strong>, cần action ngay.</p>
+      </div>
+    </div>
+
+    <!-- callout -->
+    <div class="row" style="margin-top: 36px; gap: 36px; align-items: stretch; background: var(--ink); color: var(--paper); padding: 24px 36px;">
+      <div style="flex: 0 0 200px;">
+        <div class="mono" style="color: var(--amber);">SO VỚI HIỆN TẠI</div>
+      </div>
+      <div class="body" style="flex: 1; font-size: 26px; line-height: 1.4;">
+        Thay vì chờ một thay đổi thực tế mới gửi mail, hệ thống <em style="font-family:'Instrument Serif',serif;">chủ động</em> cảnh báo dựa trên lịch trình hết hỗ trợ — chuyển từ <span class="mono" style="color: var(--amber);">reactive</span> sang <span class="mono" style="color: var(--amber);">proactive</span>.
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>Innovation 2 · Threshold alerts</div>
+      <div>11 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 12 — ARCHITECTURE ============================== -->
+<section data-screen-label="12 Kiến trúc">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>12 · Kiến trúc</span></div>
+      <div>Loosely-coupled · Scale-out</div>
+    </div>
+
+    <div class="stack" style="margin-top: 60px; gap: 36px;">
+      <div class="eyebrow">Kiến trúc hệ thống</div>
+      <h1 style="max-width: 1500px;">Tách biệt Fetching và Diffing — file nặng không làm nghẽn hàng đợi.</h1>
+    </div>
+
+    <!-- Architecture flow -->
+    <div class="stack" style="margin-top: 50px; gap: 0; border: 1px solid var(--rule); background: rgba(255,255,255,0.4);">
+      <!-- Row 1: API + UI -->
+      <div class="row" style="border-bottom: 1px solid var(--rule);">
+        <div style="flex: 1; padding: 24px 32px; border-right: 1px solid var(--rule);">
+          <div class="mono" style="color: var(--ink-soft);">FRONTEND</div>
+          <div class="body" style="font-size: 26px; font-weight: 600; margin-top: 6px;">React SPA</div>
+          <div class="small" style="margin-top: 6px; font-size: 24px;">Dashboard, Catalog, Settings</div>
+        </div>
+        <div style="flex: 1; padding: 22px 32px; border-right: 1px solid var(--rule);">
+          <div class="mono" style="color: var(--ink-soft);">CORE API</div>
+          <div class="body" style="font-size: 26px; font-weight: 600; margin-top: 8px;">ASP.NET Core Web API</div>
+          <div class="small" style="margin-top: 6px; font-size: 24px;">JWT auth · REST · EF Core</div>
+        </div>
+        <div style="flex: 1; padding: 22px 32px;">
+          <div class="mono" style="color: var(--ink-soft);">ORCHESTRATOR</div>
+          <div class="body" style="font-size: 26px; font-weight: 600; margin-top: 8px;">Elsa / Hangfire</div>
+          <div class="small" style="margin-top: 6px; font-size: 24px;">Lịch quét · Workflow</div>
+        </div>
+      </div>
+
+      <!-- Row 2: broker -->
+      <div class="row" style="background: var(--ink); color: var(--paper); border-bottom: 1px solid var(--ink);">
+        <div style="flex: 1; padding: 22px 32px; text-align: center;">
+          <span class="mono" style="color: var(--amber); font-size: 24px;">RABBITMQ · MESSAGE BROKER</span>
+          <span class="body" style="margin-left: 18px; font-size: 24px;">— điều phối lệnh giữa Core API và Workers</span>
+        </div>
+      </div>
+
+      <!-- Row 3: workers -->
+      <div class="row" style="border-bottom: 1px solid var(--rule);">
+        <div style="flex: 1; padding: 22px 32px; border-right: 1px solid var(--rule);">
+          <div class="mono" style="color: var(--amber);">WORKER · FETCHER</div>
+          <div class="body" style="font-size: 26px; font-weight: 600; margin-top: 8px;">.NET Worker Service</div>
+          <div class="small" style="margin-top: 6px; font-size: 24px;">Tải · Hash · Lưu Blob</div>
+        </div>
+        <div style="flex: 1; padding: 22px 32px; border-right: 1px solid var(--rule);">
+          <div class="mono" style="color: var(--amber);">WORKER · DIFFING</div>
+          <div class="body" style="font-size: 26px; font-weight: 600; margin-top: 8px;">.NET Worker Service</div>
+          <div class="small" style="margin-top: 6px; font-size: 24px;">Parse · So sánh · Severity</div>
+        </div>
+        <div style="flex: 1; padding: 22px 32px;">
+          <div class="mono" style="color: var(--amber);">WORKER · NOTIFIER</div>
+          <div class="body" style="font-size: 26px; font-weight: 600; margin-top: 8px;">.NET Worker Service</div>
+          <div class="small" style="margin-top: 6px; font-size: 24px;">Aggregation · Smart Digest · EOL</div>
+        </div>
+      </div>
+
+      <!-- Row 4: storage -->
+      <div class="row">
+        <div style="flex: 1; padding: 22px 32px; border-right: 1px solid var(--rule);">
+          <div class="mono" style="color: var(--ink-soft);">DATABASE</div>
+          <div class="body" style="font-size: 26px; font-weight: 600; margin-top: 8px;">SQL Server</div>
+          <div class="small" style="margin-top: 6px; font-size: 24px;">Metadata · Subscription · Diffs</div>
+        </div>
+        <div style="flex: 2; padding: 22px 32px;">
+          <div class="mono" style="color: var(--ink-soft);">OBJECT STORAGE</div>
+          <div class="body" style="font-size: 26px; font-weight: 600; margin-top: 8px;">Azure Blob · S3 · MinIO</div>
+          <div class="small" style="margin-top: 6px; font-size: 24px;">File openapi.json vật lý — không nhồi vào CSDL</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>System architecture</div>
+      <div>12 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 13 — TECH STACK ============================== -->
+<section data-screen-label="13 Tech Stack" class="ink">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>13 · Tech stack</span></div>
+      <div>Công nghệ bắt buộc</div>
+    </div>
+
+    <div class="stack" style="margin-top: 60px; gap: 36px;">
+      <div class="eyebrow">Tech stack</div>
+      <h1 style="max-width: 1500px;">Bộ công cụ chuẩn .NET, có khả năng <em style="font-family:'Instrument Serif',serif; font-weight:400; color: var(--amber);">scale-out</em> qua container.</h1>
+    </div>
+
+    <div class="grid-3" style="margin-top: 48px; gap: 20px;">
+      <div class="stack" style="gap: 10px; padding: 22px 26px; border: 1px solid rgba(242,238,229,0.18);">
+        <div class="mono" style="color: var(--amber);">FRONTEND</div>
+        <div class="body" style="font-size: 30px; font-weight: 600; color: var(--ink-on-dark);">React (SPA)</div>
+        <div class="small" style="font-size: 24px; color: var(--muted-on-dark);">RESTful · TypeScript · Vite</div>
+      </div>
+      <div class="stack" style="gap: 10px; padding: 22px 26px; border: 1px solid rgba(242,238,229,0.18);">
+        <div class="mono" style="color: var(--amber);">BACKEND</div>
+        <div class="body" style="font-size: 30px; font-weight: 600; color: var(--ink-on-dark);">ASP.NET Core Web API</div>
+        <div class="small" style="font-size: 24px; color: var(--muted-on-dark);">C# · EF Core · Code-First</div>
+      </div>
+      <div class="stack" style="gap: 10px; padding: 22px 26px; border: 1px solid rgba(242,238,229,0.18);">
+        <div class="mono" style="color: var(--amber);">ORCHESTRATOR</div>
+        <div class="body" style="font-size: 30px; font-weight: 600; color: var(--ink-on-dark);">Elsa Workflows / Hangfire</div>
+        <div class="small" style="font-size: 24px; color: var(--muted-on-dark);">Lập lịch luồng chạy ngầm linh hoạt</div>
+      </div>
+      <div class="stack" style="gap: 10px; padding: 22px 26px; border: 1px solid rgba(242,238,229,0.18);">
+        <div class="mono" style="color: var(--amber);">WORKERS</div>
+        <div class="body" style="font-size: 30px; font-weight: 600; color: var(--ink-on-dark);">.NET Worker Services</div>
+        <div class="small" style="font-size: 24px; color: var(--muted-on-dark);">Fetcher · Diffing · Notifier</div>
+      </div>
+      <div class="stack" style="gap: 10px; padding: 22px 26px; border: 1px solid rgba(242,238,229,0.18);">
+        <div class="mono" style="color: var(--amber);">DATABASE</div>
+        <div class="body" style="font-size: 30px; font-weight: 600; color: var(--ink-on-dark);">SQL Server</div>
+        <div class="small" style="font-size: 24px; color: var(--muted-on-dark);">EF Core, Code-First, Multi-tenant</div>
+      </div>
+      <div class="stack" style="gap: 10px; padding: 22px 26px; border: 1px solid rgba(242,238,229,0.18);">
+        <div class="mono" style="color: var(--amber);">MESSAGE BROKER</div>
+        <div class="body" style="font-size: 30px; font-weight: 600; color: var(--ink-on-dark);">RabbitMQ</div>
+        <div class="small" style="font-size: 24px; color: var(--muted-on-dark);">Loosely coupled command pipeline</div>
+      </div>
+      <div class="stack" style="gap: 10px; padding: 22px 26px; border: 1px solid rgba(242,238,229,0.18);">
+        <div class="mono" style="color: var(--amber);">OBJECT STORAGE</div>
+        <div class="body" style="font-size: 30px; font-weight: 600; color: var(--ink-on-dark);">Azure Blob · AWS S3 · MinIO</div>
+        <div class="small" style="font-size: 24px; color: var(--muted-on-dark);">Lưu file openapi.json vật lý</div>
+      </div>
+      <div class="stack" style="gap: 10px; padding: 22px 26px; border: 1px solid rgba(242,238,229,0.18);">
+        <div class="mono" style="color: var(--amber);">SECURITY</div>
+        <div class="body" style="font-size: 30px; font-weight: 600; color: var(--ink-on-dark);">JWT · HTTPS · DB Encryption</div>
+        <div class="small" style="font-size: 24px; color: var(--muted-on-dark);">API Keys / Tokens được mã hoá</div>
+      </div>
+      <div class="stack" style="gap: 10px; padding: 22px 26px; border: 1px solid rgba(242,238,229,0.18);">
+        <div class="mono" style="color: var(--amber);">DEPLOYMENT</div>
+        <div class="body" style="font-size: 30px; font-weight: 600; color: var(--ink-on-dark);">Docker · Scale-out</div>
+        <div class="small" style="font-size: 24px; color: var(--muted-on-dark);">Worker scale ngang theo tải</div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>Tech stack</div>
+      <div>13 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 14 — DATA MODELS ============================== -->
+<section data-screen-label="14 Data model">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>14 · Mô hình dữ liệu</span></div>
+      <div>Core entities · Multi-tenant</div>
+    </div>
+
+    <div class="stack" style="margin-top: 50px; gap: 24px;">
+      <div class="eyebrow">Data model</div>
+      <h1 style="max-width: 1500px; font-size: 58px;">Năm bảng cốt lõi — chuẩn hoá cho mô hình multi-tenant.</h1>
+    </div>
+
+    <div class="grid-3" style="margin-top: 50px; gap: 22px;">
+      <div class="card" style="padding: 20px 22px 22px; gap: 8px;">
+        <span class="num">01 · CORE</span>
+        <h3 style="font-size: 26px;">MonitoredTargets</h3>
+        <p class="mono" style="font-size: 24px; color: var(--ink-2); background: rgba(22,23,28,0.05); padding: 8px 12px; line-height: 1.25;">
+          TargetId · NormalizedName<br/>OriginalUrl · Type<br/>Visibility · CurrentHash<br/>AuthHeader<br/>EolDate · EolWarnedAt
+        </p>
+      </div>
+      <div class="card" style="padding: 20px 22px 22px; gap: 8px;">
+        <span class="num">02 · IDENTITY</span>
+        <h3 style="font-size: 26px;">Users</h3>
+        <p class="mono" style="font-size: 24px; color: var(--ink-2); background: rgba(22,23,28,0.05); padding: 8px 12px; line-height: 1.25;">
+          UserId<br/>Email<br/>TenantId<br/>Role<br/>CreatedAt
+        </p>
+      </div>
+      <div class="card" style="padding: 20px 22px 22px; gap: 8px;">
+        <span class="num">03 · SUBSCRIPTION</span>
+        <h3 style="font-size: 26px;">UserSubscriptions</h3>
+        <p class="mono" style="font-size: 24px; color: var(--ink-2); background: rgba(22,23,28,0.05); padding: 8px 12px; line-height: 1.25;">
+          UserId · TargetId<br/>NotificationFrequency<br/>LastNotifiedAt<br/>EolThresholds (180·90·30d)
+        </p>
+      </div>
+      <div class="card" style="padding: 20px 22px 22px; gap: 8px;">
+        <span class="num">04 · HISTORY</span>
+        <h3 style="font-size: 26px;">ApiVersions</h3>
+        <p class="mono" style="font-size: 24px; color: var(--ink-2); background: rgba(22,23,28,0.05); padding: 8px 12px; line-height: 1.25;">
+          VersionId<br/>FileHash<br/>BlobStorageUrl<br/>FetchedAt
+        </p>
+      </div>
+      <div class="card" style="padding: 20px 22px 22px; gap: 8px;">
+        <span class="num">05 · ANALYSIS</span>
+        <h3 style="font-size: 26px;">ApiDiffs</h3>
+        <p class="mono" style="font-size: 24px; color: var(--ink-2); background: rgba(22,23,28,0.05); padding: 8px 12px; line-height: 1.25;">
+          DiffId<br/>OldVersionId · NewVersionId<br/>ChangesJson<br/>Severity
+        </p>
+      </div>
+      <div class="card" style="padding: 20px 22px 22px; gap: 8px; background: rgba(208,131,39,0.08); border-color: rgba(208,131,39,0.35);">
+        <span class="num" style="color: var(--crimson);">+ CẢI TIẾN</span>
+        <h3 style="font-size: 26px;">LifecycleEvents</h3>
+        <p class="mono" style="font-size: 24px; color: var(--ink-2); background: rgba(22,23,28,0.05); padding: 8px 12px; line-height: 1.25;">
+          EventId · TargetId<br/>EventType (EOL · EOS)<br/>ThresholdReached (6m·3m·1m)<br/>NotifiedAt
+        </p>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>Core data models</div>
+      <div>14 / 15</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 15 — VALUE / CLOSE ============================== -->
+<section data-screen-label="15 Tóm tắt giá trị" class="ink">
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="dot"></span><span>15 · Tóm tắt</span></div>
+      <div>Value &amp; next steps</div>
+    </div>
+
+    <div class="stack" style="margin-top: 120px; gap: 56px;">
+      <div class="eyebrow">Giá trị mang lại</div>
+      <h1 class="xl" style="max-width: 1500px; line-height: 1.32;">
+        Từ <em style="font-family:'Instrument Serif',serif; font-weight: 400; line-height: 1;">phản ứng</em> theo thay đổi,<br/>
+        sang <em style="font-family:'Instrument Serif',serif; font-weight: 400; color: var(--amber); line-height: 1;">chủ động</em> theo vòng đời.
+      </h1>
+    </div>
+
+    <div class="grid-4" style="margin-top: 100px;">
+      <div class="stack" style="gap: 16px;">
+        <div class="figure it" style="color: var(--amber); font-size: 110px;">−98%</div>
+        <div class="body" style="font-size: 24px; color: var(--muted-on-dark); line-height: 1.4;">Request &amp; storage không cần thiết.</div>
+      </div>
+      <div class="stack" style="gap: 16px;">
+        <div class="figure it" style="color: var(--amber); font-size: 110px;">0</div>
+        <div class="body" style="font-size: 24px; color: var(--muted-on-dark); line-height: 1.4;">Email gửi cho thay đổi đã rollback.</div>
+      </div>
+      <div class="stack" style="gap: 16px;">
+        <div class="figure it" style="color: var(--amber); font-size: 110px;">6m</div>
+        <div class="body" style="font-size: 24px; color: var(--muted-on-dark); line-height: 1.4;">Thời gian cảnh báo trước khi hết hỗ trợ.</div>
+      </div>
+      <div class="stack" style="gap: 16px;">
+        <div class="figure it" style="color: var(--amber); font-size: 110px;">1</div>
+        <div class="body" style="font-size: 24px; color: var(--muted-on-dark); line-height: 1.4;">Nền tảng cho mọi loại phụ thuộc.</div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>Cảm ơn — Q&amp;A</div>
+      <div>15 / 15</div>
+    </div>
+  </div>
+</section>
+
+</deck-stage>
+
+<script type="application/json" id="speaker-notes">
+[]
+</script>
+
+</body>
+</html>
