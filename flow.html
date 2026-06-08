@@ -1,0 +1,1134 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DepWatch - Luồng Theo Dõi Thay Đổi API và Thư Viện</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f9fc;
+      --panel: #ffffff;
+      --ink: #182230;
+      --muted: #5b677a;
+      --line: #d8e0ec;
+      --accent: #0f766e;
+      --accent-soft: #e6f5f3;
+      --blue: #1d4ed8;
+      --blue-soft: #e8f0ff;
+      --amber: #b45309;
+      --amber-soft: #fff4df;
+      --red: #b42318;
+      --red-soft: #fff0ee;
+      --code-bg: #0f172a;
+      --code-ink: #e2e8f0;
+      --radius: 8px;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    header {
+      background: #10202d;
+      color: #f8fafc;
+      padding: 44px 24px 36px;
+      border-bottom: 5px solid var(--accent);
+    }
+
+    main {
+      width: min(1160px, calc(100% - 40px));
+      margin: 28px auto 64px;
+    }
+
+    h1, h2, h3 {
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(30px, 4vw, 48px);
+      letter-spacing: 0;
+      max-width: 980px;
+    }
+
+    h2 {
+      font-size: 26px;
+      margin-bottom: 14px;
+    }
+
+    h3 {
+      font-size: 19px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 650;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.92em;
+      background: #eef2f7;
+      border: 1px solid #dce4ef;
+      padding: 1px 5px;
+      border-radius: 5px;
+    }
+
+    pre {
+      margin: 14px 0 0;
+      padding: 18px;
+      overflow: auto;
+      color: var(--code-ink);
+      background: var(--code-bg);
+      border-radius: var(--radius);
+      line-height: 1.55;
+    }
+
+    pre code {
+      display: block;
+      padding: 0;
+      color: inherit;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      font-size: 14px;
+    }
+
+    ul, ol {
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 22px;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      overflow: hidden;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      font-size: 13px;
+      color: #334155;
+      background: #f1f5f9;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .subtitle {
+      max-width: 900px;
+      margin-top: 14px;
+      color: #cbd5e1;
+      font-size: 18px;
+    }
+
+    .doc-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.12);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .section {
+      margin: 22px 0;
+      padding: 24px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .note {
+      padding: 16px;
+      border-radius: var(--radius);
+      margin: 14px 0;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+    }
+
+    .note strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .note.good {
+      background: var(--accent-soft);
+      border-color: #9bd4cd;
+    }
+
+    .note.warn {
+      background: var(--amber-soft);
+      border-color: #f0c36d;
+    }
+
+    .note.danger {
+      background: var(--red-soft);
+      border-color: #ffb5ae;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mini-card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfdff;
+    }
+
+    .mini-card h3 {
+      color: #0f766e;
+    }
+
+    .flow {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .flow-step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfdff;
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      color: #ffffff;
+      background: var(--accent);
+      border-radius: 50%;
+      font-weight: 800;
+    }
+
+    .flow-step h3 {
+      margin-top: 4px;
+    }
+
+    .arrow {
+      text-align: center;
+      color: var(--muted);
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 2px 7px;
+      border-radius: 999px;
+      color: #164e63;
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .tag.db {
+      color: #134e4a;
+      background: #ccfbf1;
+      border-color: #99f6e4;
+    }
+
+    .tag.queue {
+      color: #5b21b6;
+      background: #ede9fe;
+      border-color: #ddd6fe;
+    }
+
+    .tag.storage {
+      color: #92400e;
+      background: #fef3c7;
+      border-color: #fde68a;
+    }
+
+    .toc {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .toc a {
+      display: block;
+      padding: 10px 12px;
+      color: #0f172a;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-weight: 700;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 820px) {
+      main {
+        width: min(100% - 24px, 1160px);
+      }
+
+      .grid.two,
+      .grid.three,
+      .toc {
+        grid-template-columns: 1fr;
+      }
+
+      .section {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DepWatch: bản chất luồng theo dõi thay đổi API và thư viện</h1>
+    <p class="subtitle">
+      Tài liệu này giải thích hệ thống DepWatch hiện tại đang hoạt động như thế nào:
+      API chỉ quản lý dữ liệu và lập lịch, RabbitMQ nối các bước xử lý, còn Fetcher,
+      Diffing và Notifier Worker xử lý pipeline nền.
+    </p>
+    <div class="doc-meta">
+      <span class="pill">API contract/spec monitoring</span>
+      <span class="pill">OpenAPI/Swagger</span>
+      <span class="pill">RabbitMQ pipeline</span>
+      <span class="pill">SQL Server + MinIO</span>
+      <span class="pill">ASP.NET Core + Workers</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2>Mục Lục</h2>
+      <div class="toc">
+        <a href="#summary">1. Tóm tắt bản chất</a>
+        <a href="#components">2. Thành phần hệ thống</a>
+        <a href="#big-flow">3. Luồng tổng quan</a>
+        <a href="#database">4. Dữ liệu lưu trong DB</a>
+        <a href="#detailed-flow">5. Luồng chi tiết từng bước</a>
+        <a href="#openapi">6. Theo dõi API OpenAPI</a>
+        <a href="#libraries">7. Theo dõi thư viện</a>
+        <a href="#deploy">8. Khi deploy cần chạy gì</a>
+        <a href="#limits">9. Giới hạn hiện tại</a>
+      </div>
+    </section>
+
+    <section id="summary" class="section">
+      <h2>1. Tóm Tắt Bản Chất</h2>
+      <p>
+        DepWatch hiện tại là hệ thống theo dõi thay đổi của <strong>mô tả API</strong>
+        và <strong>nguồn phát hành thư viện</strong>, không phải hệ thống gọi thử API nghiệp vụ.
+        Với API, hệ thống chủ yếu theo dõi file <code>openapi.json</code>,
+        <code>swagger.json</code> hoặc YAML tương đương. Nó tải spec, lưu snapshot, so sánh bản cũ
+        và bản mới, rồi cảnh báo nếu có thay đổi đáng chú ý.
+      </p>
+
+      <div class="note good">
+        <strong>Câu mô tả ngắn gọn nhất</strong>
+        DepWatch gọi <code>GET /openapi.json</code> để đọc hợp đồng API, sau đó diff hợp đồng đó.
+        Nó không gọi <code>POST /orders</code> hay <code>GET /users</code> với body/query thật để kiểm tra runtime.
+      </div>
+
+      <div class="grid two">
+        <div class="mini-card">
+          <h3>DepWatch đang làm</h3>
+          <ul>
+            <li>Theo dõi OpenAPI/Swagger specification.</li>
+            <li>Theo dõi GitHub release mới nhất.</li>
+            <li>Theo dõi latest version từ NuGet, npm, PyPI.</li>
+            <li>Tính hash để biết dữ liệu có đổi hay không.</li>
+            <li>Lưu snapshot vào storage.</li>
+            <li>Tạo diff và gửi digest cảnh báo.</li>
+          </ul>
+        </div>
+
+        <div class="mini-card">
+          <h3>DepWatch chưa phải là</h3>
+          <ul>
+            <li>Runtime API monitoring.</li>
+            <li>Synthetic API testing.</li>
+            <li>Contract test gọi từng endpoint thật.</li>
+            <li>Công cụ tự quét repo công ty để biết project đang dùng package nào.</li>
+            <li>Công cụ tự biết project đang gọi endpoint nào trong code.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="components" class="section">
+      <h2>2. Các Thành Phần Chính Của Hệ Thống</h2>
+      <p>
+        Hệ thống không chỉ có một API duy nhất. Khi chạy đầy đủ, nó gồm API web,
+        ba worker nền, database, message broker và object storage.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Thành phần</th>
+            <th>Vai trò</th>
+            <th>Có xử lý job chính không?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>DepWatch.API</code></td>
+            <td>
+              Nhận request từ frontend, quản lý user, target, subscription, dashboard,
+              diff query. Đồng thời chứa Hangfire scheduler để định kỳ tạo lệnh quét.
+            </td>
+            <td>Không xử lý fetch/diff/notify trực tiếp. Nó chỉ lập lịch và publish message.</td>
+          </tr>
+          <tr>
+            <td><code>DepWatch.Worker.Fetcher</code></td>
+            <td>
+              Nghe queue <code>fetch-requested</code>, tải dữ liệu từ bên ngoài:
+              OpenAPI spec, GitHub release, hoặc registry package.
+            </td>
+            <td>Có. Đây là worker lấy dữ liệu mới.</td>
+          </tr>
+          <tr>
+            <td><code>DepWatch.Worker.Diffing</code></td>
+            <td>
+              Nghe queue <code>diff-requested</code>, đọc snapshot cũ/mới,
+              phân tích thay đổi và tạo record diff.
+            </td>
+            <td>Có. Đây là worker hiểu dữ liệu thay đổi gì.</td>
+          </tr>
+          <tr>
+            <td><code>DepWatch.Worker.Notifier</code></td>
+            <td>
+              Nghe queue <code>notify-requested</code>, gom diff theo chu kỳ,
+              chống rollback noise và gửi email digest.
+            </td>
+            <td>Có. Đây là worker báo cho user.</td>
+          </tr>
+          <tr>
+            <td><code>SQL Server</code></td>
+            <td>Lưu user, target, subscription, version snapshot metadata, diff metadata.</td>
+            <td>Không. Đây là nơi lưu trạng thái nghiệp vụ.</td>
+          </tr>
+          <tr>
+            <td><code>RabbitMQ</code></td>
+            <td>Nối các bước nền với nhau bằng message queue.</td>
+            <td>Không. Đây là đường truyền job.</td>
+          </tr>
+          <tr>
+            <td><code>MinIO / S3 / Azure Blob</code></td>
+            <td>Lưu file snapshot vật lý và diff JSON lớn nếu cần.</td>
+            <td>Không. Đây là object storage.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <strong>Vai trò của Hangfire</strong>
+        Hangfire không trực tiếp chạy Fetcher, Diffing hay Notifier. Hangfire chỉ là đồng hồ
+        trong API, định kỳ gọi scheduler để publish <code>FetchRequestedEvent</code> vào RabbitMQ.
+      </div>
+    </section>
+
+    <section id="big-flow" class="section">
+      <h2>3. Luồng Tổng Quan</h2>
+      <p>
+        Đây là toàn bộ pipeline khi hệ thống vận hành bình thường. Mỗi mũi tên qua RabbitMQ
+        nghĩa là service trước publish message, service sau đang chạy độc lập và consume queue đó.
+      </p>
+
+      <div class="legend">
+        <span class="tag db">DB</span>
+        <span class="tag queue">RabbitMQ</span>
+        <span class="tag storage">Storage</span>
+        <span class="tag">Process</span>
+      </div>
+
+      <pre><code>User tạo target
+  -> DepWatch.API
+  -> DB: MonitoredTargets
+
+User subscribe target
+  -> DepWatch.API
+  -> DB: UserSubscriptions
+
+Hangfire trong DepWatch.API chạy định kỳ
+  -> ScanScheduler đọc MonitoredTargets + UserSubscriptions
+  -> RabbitMQ: fetch-requested
+
+DepWatch.Worker.Fetcher
+  -> tải OpenAPI / GitHub release / package registry
+  -> tính hash
+  -> nếu hash đổi: upload snapshot vào Storage
+  -> DB: ApiVersions
+  -> DB: update MonitoredTargets.CurrentHash + LastScannedAt
+  -> RabbitMQ: diff-requested
+
+DepWatch.Worker.Diffing
+  -> đọc ApiVersions
+  -> tải snapshot cũ/mới từ Storage
+  -> phân tích thay đổi
+  -> DB: ApiDiffs
+  -> RabbitMQ: notify-requested
+
+DepWatch.Worker.Notifier
+  -> đọc UserSubscriptions + ApiDiffs + Users + MonitoredTargets
+  -> gom nhiều thay đổi thành digest
+  -> gửi email
+  -> DB: update LastNotifiedAt + NotifyHashSnapshot</code></pre>
+    </section>
+
+    <section id="database" class="section">
+      <h2>4. Dữ Liệu Được Lưu Vào Database</h2>
+      <p>
+        SQL Server không lưu toàn bộ file OpenAPI lớn trực tiếp. Database chủ yếu lưu metadata,
+        trạng thái theo dõi và kết quả phân tích. File snapshot được lưu ở object storage.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Bảng</th>
+            <th>Lưu gì?</th>
+            <th>Vai trò trong pipeline</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Users</code></td>
+            <td>Thông tin người dùng: email, display name, password hash...</td>
+            <td>Dùng để xác thực và xác định người nhận cảnh báo.</td>
+          </tr>
+          <tr>
+            <td><code>MonitoredTargets</code></td>
+            <td>
+              Target đang được theo dõi: URL gốc, URL đã normalize, loại target,
+              visibility, current hash, auth header private, thời điểm quét gần nhất.
+            </td>
+            <td>Là bảng trung tâm của hệ thống theo dõi.</td>
+          </tr>
+          <tr>
+            <td><code>UserSubscriptions</code></td>
+            <td>
+              User nào đang theo dõi target nào, tần suất quét/cảnh báo,
+              lần thông báo gần nhất và hash snapshot đầu chu kỳ.
+            </td>
+            <td>Quyết định target nào cần quét và user nào sẽ nhận digest.</td>
+          </tr>
+          <tr>
+            <td><code>ApiVersions</code></td>
+            <td>
+              Metadata của mỗi snapshot đã tải: target, version label, file hash,
+              URL object trong storage, captured time, raw summary nếu có.
+            </td>
+            <td>Lưu lịch sử phiên bản để Diffing Worker biết so sánh bản nào với bản nào.</td>
+          </tr>
+          <tr>
+            <td><code>ApiDiffs</code></td>
+            <td>
+              Kết quả phân tích giữa hai snapshot: old version, new version,
+              severity, JSON mô tả thay đổi, thời điểm phân tích.
+            </td>
+            <td>Là dữ liệu hiển thị trên UI và đưa vào email digest.</td>
+          </tr>
+          <tr>
+            <td><code>RefreshTokens</code></td>
+            <td>Refresh token của người dùng.</td>
+            <td>Phục vụ authentication, không trực tiếp thuộc pipeline scan.</td>
+          </tr>
+          <tr>
+            <td><code>SourceRegistry</code></td>
+            <td>Nguồn registry/changelog chuẩn đã biết như NuGet, npm, PyPI, GitHub.</td>
+            <td>Hỗ trợ Fetcher tìm nguồn changelog hoặc registry chính thống.</td>
+          </tr>
+          <tr>
+            <td><code>SourceCache</code></td>
+            <td>Cache nguồn changelog đã tìm được.</td>
+            <td>Giảm việc tìm kiếm lại nguồn changelog cho cùng target.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="detailed-flow" class="section">
+      <h2>5. Luồng Chi Tiết Từng Bước</h2>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div><span class="step-number">1</span></div>
+          <div>
+            <h3>User tạo target</h3>
+            <p>
+              User nhập OpenAPI URL, GitHub repository hoặc package name/registry URL.
+              API nhận request qua <code>TargetsController</code> và gọi
+              <code>TargetService.CreateAsync</code>.
+            </p>
+            <p>
+              Service dùng <code>TargetUrlAnalyzer</code> để normalize input và đoán loại target:
+              <code>OpenApi</code>, <code>GitHubRelease</code>, <code>NuGet</code>,
+              <code>Npm</code> hoặc <code>PyPi</code>.
+            </p>
+            <p>
+              Dữ liệu được lưu vào <span class="tag db">MonitoredTargets</span>.
+            </p>
+            <pre><code>MonitoredTargets
+- Id
+- NormalizedUrl
+- OriginalUrl
+- DisplayName
+- Type
+- Visibility
+- CurrentHash
+- AuthHeaderEncrypted
+- LastScannedAt
+- CreatedAt</code></pre>
+          </div>
+        </div>
+
+        <div class="arrow">↓</div>
+
+        <div class="flow-step">
+          <div><span class="step-number">2</span></div>
+          <div>
+            <h3>User subscribe target</h3>
+            <p>
+              Target là đối tượng dùng chung toàn hệ thống. Một target có thể có nhiều user subscribe.
+              Khi user subscribe, hệ thống không tạo target mới nếu target đã tồn tại.
+              Nó tạo record liên kết user và target.
+            </p>
+            <p>
+              Dữ liệu được lưu vào <span class="tag db">UserSubscriptions</span>.
+            </p>
+            <pre><code>UserSubscriptions
+- Id
+- UserId
+- TargetId
+- ScanFrequency
+- ScanPriority
+- LastNotifiedAt
+- NotifyHashSnapshot
+- CreatedAt</code></pre>
+            <div class="note good">
+              <strong>Ý nghĩa deduplication</strong>
+              Nếu 1.000 user cùng theo dõi một OpenAPI URL, hệ thống chỉ cần quét URL đó một lần
+              theo chu kỳ dày nhất, sau đó kết quả diff có thể phục vụ tất cả subscriber.
+            </div>
+          </div>
+        </div>
+
+        <div class="arrow">↓</div>
+
+        <div class="flow-step">
+          <div><span class="step-number">3</span></div>
+          <div>
+            <h3>Hangfire gọi ScanScheduler</h3>
+            <p>
+              Trong <code>DepWatch.API</code>, Hangfire định kỳ gọi
+              <code>ScanScheduler.EnqueueDueScansAsync()</code>. Scheduler đọc tất cả subscription,
+              gom theo <code>TargetId</code>, rồi chọn tần suất quét dày nhất cho mỗi target.
+            </p>
+            <p>
+              Ví dụ nếu một user chọn Daily và user khác chọn Weekly cho cùng target,
+              hệ thống chọn Daily để đảm bảo không bỏ sót thay đổi.
+            </p>
+            <p>
+              Nếu target đến hạn quét, scheduler publish message vào
+              <span class="tag queue">RabbitMQ: fetch-requested</span>.
+            </p>
+            <pre><code>FetchRequestedEvent
+- TargetId
+- TargetType
+- NormalizedUrl
+- AuthHeaderEncrypted
+- CurrentHash</code></pre>
+            <div class="note">
+              <strong>Hangfire dừng ở đây</strong>
+              Sau khi message được đưa vào RabbitMQ, Hangfire không xử lý fetch/diff/notify.
+              Các worker độc lập sẽ nhận việc từ queue.
+            </div>
+          </div>
+        </div>
+
+        <div class="arrow">↓</div>
+
+        <div class="flow-step">
+          <div><span class="step-number">4</span></div>
+          <div>
+            <h3>Fetcher Worker tải dữ liệu</h3>
+            <p>
+              <code>DepWatch.Worker.Fetcher</code> nghe queue <code>fetch-requested</code>.
+              Khi nhận message, nó chọn handler theo loại target.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>TargetType</th>
+                  <th>Handler</th>
+                  <th>Dữ liệu tải về</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>OpenApi</code></td>
+                  <td><code>OpenApiFetchHandler</code></td>
+                  <td>File OpenAPI/Swagger JSON/YAML.</td>
+                </tr>
+                <tr>
+                  <td><code>GitHubRelease</code></td>
+                  <td><code>GitHubReleaseFetchHandler</code></td>
+                  <td>Release mới nhất từ GitHub API.</td>
+                </tr>
+                <tr>
+                  <td><code>NuGet</code>, <code>Npm</code>, <code>PyPi</code></td>
+                  <td><code>PackageRegistryFetchHandler</code></td>
+                  <td>Metadata package từ registry để lấy latest version.</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              Sau khi tải content, Fetcher tính SHA256 hash và so với <code>CurrentHash</code>
+              trong message.
+            </p>
+          </div>
+        </div>
+
+        <div class="arrow">↓</div>
+
+        <div class="flow-step">
+          <div><span class="step-number">5</span></div>
+          <div>
+            <h3>Nếu hash không đổi</h3>
+            <p>
+              Nếu hash mới bằng hash hiện tại, nghĩa là dữ liệu ngoài chưa thay đổi.
+              Hệ thống không tạo version mới, không diff và không notify.
+            </p>
+            <p>
+              Database chỉ cập nhật <code>LastScannedAt</code> trong
+              <span class="tag db">MonitoredTargets</span> để scheduler biết target vừa được quét.
+            </p>
+            <pre><code>MonitoredTargets.LastScannedAt = now</code></pre>
+          </div>
+        </div>
+
+        <div class="arrow">↓</div>
+
+        <div class="flow-step">
+          <div><span class="step-number">6</span></div>
+          <div>
+            <h3>Nếu hash thay đổi</h3>
+            <p>
+              Nếu hash mới khác hash cũ, hệ thống coi đây là một snapshot mới.
+              Fetcher upload content vật lý lên <span class="tag storage">MinIO/S3/Azure Blob</span>.
+              Sau đó tạo record trong <span class="tag db">ApiVersions</span>.
+            </p>
+            <pre><code>ApiVersions
+- Id
+- TargetId
+- VersionLabel
+- FileHash
+- BlobStorageUrl
+- CapturedAt
+- RawSummary</code></pre>
+            <p>
+              Sau đó cập nhật target hiện tại:
+            </p>
+            <pre><code>MonitoredTargets.CurrentHash = newHash
+MonitoredTargets.LastScannedAt = now</code></pre>
+            <p>
+              Cuối cùng Fetcher publish message vào
+              <span class="tag queue">RabbitMQ: diff-requested</span>.
+            </p>
+            <pre><code>DiffRequestedEvent
+- TargetId
+- TargetType
+- OldVersionId
+- NewVersionId</code></pre>
+          </div>
+        </div>
+
+        <div class="arrow">↓</div>
+
+        <div class="flow-step">
+          <div><span class="step-number">7</span></div>
+          <div>
+            <h3>Diffing Worker phân tích thay đổi</h3>
+            <p>
+              <code>DepWatch.Worker.Diffing</code> nghe queue <code>diff-requested</code>.
+              Nó đọc metadata version cũ/mới từ <span class="tag db">ApiVersions</span>,
+              sau đó tải file snapshot từ storage bằng <code>BlobStorageUrl</code>.
+            </p>
+            <p>
+              Analyzer được chọn theo loại target:
+            </p>
+            <ul>
+              <li><code>OpenApiAnalyzer</code>: parse và diff OpenAPI spec.</li>
+              <li><code>ChangelogAnalyzer</code>: phân loại release notes GitHub bằng keyword/regex.</li>
+              <li><code>SemverAnalyzer</code>: so sánh version package theo SemVer.</li>
+            </ul>
+            <p>
+              Kết quả được lưu vào <span class="tag db">ApiDiffs</span>.
+            </p>
+            <pre><code>ApiDiffs
+- Id
+- TargetId
+- OldVersionId
+- NewVersionId
+- Severity
+- ChangesJson
+- AnalyzedAt</code></pre>
+            <p>
+              Sau khi lưu diff, worker publish message vào
+              <span class="tag queue">RabbitMQ: notify-requested</span>.
+            </p>
+            <pre><code>NotifyRequestedEvent
+- TargetId
+- DiffId
+- Severity
+- TargetType</code></pre>
+          </div>
+        </div>
+
+        <div class="arrow">↓</div>
+
+        <div class="flow-step">
+          <div><span class="step-number">8</span></div>
+          <div>
+            <h3>Notifier Worker gom và gửi cảnh báo</h3>
+            <p>
+              <code>DepWatch.Worker.Notifier</code> nghe queue <code>notify-requested</code>.
+              Nó tìm các subscription của target, kiểm tra chu kỳ nhận cảnh báo, rồi lấy các diff
+              trong khoảng từ <code>LastNotifiedAt</code> đến hiện tại.
+            </p>
+            <p>
+              Worker không gửi từng diff riêng lẻ ngay lập tức. Nó gom nhiều thay đổi trong chu kỳ
+              thành một email digest, giúp giảm nhiễu.
+            </p>
+            <p>
+              Nếu gửi email thành công, hệ thống cập nhật
+              <span class="tag db">UserSubscriptions</span>.
+            </p>
+            <pre><code>UserSubscriptions.LastNotifiedAt = now
+UserSubscriptions.NotifyHashSnapshot = MonitoredTargets.CurrentHash</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="openapi" class="section">
+      <h2>6. Với API: DepWatch Theo Dõi OpenAPI/Swagger Spec</h2>
+      <p>
+        Đây là điểm rất quan trọng để tránh nhầm lẫn. DepWatch hiện tại theo dõi
+        <strong>file mô tả API</strong>, không gọi thử từng endpoint nghiệp vụ.
+      </p>
+
+      <div class="grid two">
+        <div class="mini-card">
+          <h3>Luồng hiện tại</h3>
+          <pre><code>DepWatch gọi:
+GET https://provider.com/openapi.json
+
+Sau đó:
+- parse spec
+- so sánh spec cũ/mới
+- phát hiện breaking change
+- cảnh báo user</code></pre>
+        </div>
+
+        <div class="mini-card">
+          <h3>Không phải luồng hiện tại</h3>
+          <pre><code>DepWatch không gọi:
+POST https://provider.com/orders
+Body: { ... }
+
+DepWatch không kiểm tra:
+- endpoint runtime có sống không
+- status code thực tế
+- latency thực tế
+- business response thực tế</code></pre>
+        </div>
+      </div>
+
+      <h3>Các thay đổi OpenAPI có thể phát hiện</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Loại thay đổi</th>
+            <th>Ví dụ</th>
+            <th>Mức độ thường gặp</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Endpoint bị xóa</td>
+            <td><code>/v1/users</code> biến mất khỏi spec mới.</td>
+            <td>Breaking</td>
+          </tr>
+          <tr>
+            <td>Method bị xóa</td>
+            <td><code>POST /orders</code> không còn tồn tại.</td>
+            <td>Breaking</td>
+          </tr>
+          <tr>
+            <td>Parameter mới bắt buộc</td>
+            <td>Thêm query <code>tenantId</code> với <code>required: true</code>.</td>
+            <td>Breaking</td>
+          </tr>
+          <tr>
+            <td>Parameter optional thành required</td>
+            <td><code>region</code> trước optional, nay required.</td>
+            <td>Breaking</td>
+          </tr>
+          <tr>
+            <td>Request body field mới required</td>
+            <td>Thêm field <code>customerType</code> bắt buộc trong body.</td>
+            <td>Breaking</td>
+          </tr>
+          <tr>
+            <td>Response field đổi type</td>
+            <td><code>amount</code> đổi từ string sang number.</td>
+            <td>Breaking hoặc Warning tùy chính sách.</td>
+          </tr>
+          <tr>
+            <td>Endpoint mới</td>
+            <td>Thêm <code>GET /v2/reports</code>.</td>
+            <td>Safe</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note warn">
+        <strong>Nếu provider không có OpenAPI/Swagger</strong>
+        Với thiết kế hiện tại, DepWatch không thể diff cấu trúc API một cách chính xác.
+        Có thể mở rộng theo hướng theo dõi changelog/docs HTML, nhưng độ chính xác sẽ thấp hơn
+        rất nhiều so với OpenAPI spec.
+      </div>
+
+      <div class="note warn">
+        <strong>API cần auth thì sao?</strong>
+        Auth chỉ cần để tải được file OpenAPI private. Hệ thống hiện có ý tưởng lưu
+        <code>AuthHeaderEncrypted</code> và gắn vào request khi fetch spec. Tuy nhiên phần mã hóa thật
+        hiện vẫn cần hoàn thiện nếu dùng production.
+      </div>
+
+      <div class="note">
+        <strong>API có body thì sao?</strong>
+        Body của endpoint không được gửi đi. Nó chỉ được đọc dưới dạng schema trong OpenAPI.
+        Ví dụ spec nói request body có field <code>name</code>, <code>email</code>, field nào required,
+        type là gì. DepWatch diff schema này, không gửi body thật.
+      </div>
+    </section>
+
+    <section id="libraries" class="section">
+      <h2>7. Với Thư Viện: DepWatch Theo Dõi Nguồn Phát Hành</h2>
+      <p>
+        Với package như NuGet, npm hoặc PyPI, hệ thống tải metadata từ registry để biết latest version.
+        Nó không tự biết project công ty đang dùng package nào nếu chưa có module import/scan project.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Loại thư viện</th>
+            <th>Nguồn theo dõi</th>
+            <th>Cách phân tích hiện tại</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>NuGet</td>
+            <td>NuGet registry API</td>
+            <td>Đọc latest version, so SemVer: Major = Breaking, Minor = Warning, Patch = Safe.</td>
+          </tr>
+          <tr>
+            <td>npm</td>
+            <td>npm registry API</td>
+            <td>Đọc <code>dist-tags.latest</code>, so SemVer.</td>
+          </tr>
+          <tr>
+            <td>PyPI</td>
+            <td>PyPI package API</td>
+            <td>Đọc version mới nhất, so SemVer nếu parse được.</td>
+          </tr>
+          <tr>
+            <td>GitHub Release</td>
+            <td>GitHub releases/latest API</td>
+            <td>Lấy changelog Markdown, phân loại keyword: breaking, feature, bugfix.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note warn">
+        <strong>Giới hạn với bài toán công ty</strong>
+        Hệ thống hiện theo dõi target/package được user thêm hoặc subscribe. Nó chưa có lớp
+        <code>CompanyProjects</code>, <code>ProjectDependencies</code> để tự quét repo công ty
+        và biết project nào đang dùng package nào, version nào.
+      </div>
+    </section>
+
+    <section id="deploy" class="section">
+      <h2>8. Khi Deploy Cần Chạy Những Gì?</h2>
+      <p>
+        Bỏ qua Docker hay không thì vẫn cần hiểu rằng mỗi worker là một process/app riêng.
+        Nếu chỉ chạy <code>DepWatch.API</code>, hệ thống chỉ nhận request và tạo message scan.
+        Không có worker thì message sẽ nằm trong RabbitMQ mà không được xử lý.
+      </p>
+
+      <div class="grid two">
+        <div class="mini-card">
+          <h3>Tối thiểu cần chạy</h3>
+          <ul>
+            <li><code>DepWatch.API</code></li>
+            <li><code>DepWatch.Worker.Fetcher</code></li>
+            <li><code>DepWatch.Worker.Diffing</code></li>
+            <li><code>DepWatch.Worker.Notifier</code></li>
+            <li>SQL Server</li>
+            <li>RabbitMQ</li>
+            <li>MinIO hoặc object storage tương đương</li>
+          </ul>
+        </div>
+
+        <div class="mini-card">
+          <h3>Nếu thiếu worker</h3>
+          <ul>
+            <li>Thiếu Fetcher: không ai tải OpenAPI/package/release.</li>
+            <li>Thiếu Diffing: có snapshot mới nhưng không ai phân tích thay đổi.</li>
+            <li>Thiếu Notifier: có diff nhưng không ai gửi cảnh báo.</li>
+          </ul>
+        </div>
+      </div>
+
+      <pre><code>DepWatch.API
+  -> Hangfire Scheduler
+  -> RabbitMQ: fetch-requested
+
+DepWatch.Worker.Fetcher
+  -> RabbitMQ: diff-requested
+
+DepWatch.Worker.Diffing
+  -> RabbitMQ: notify-requested
+
+DepWatch.Worker.Notifier
+  -> Email</code></pre>
+    </section>
+
+    <section id="limits" class="section">
+      <h2>9. Giới Hạn Hiện Tại Và Những Điểm Dễ Hiểu Nhầm</h2>
+
+      <div class="note danger">
+        <strong>1. Không phải runtime API monitoring</strong>
+        Hệ thống không gọi thử endpoint thật với method/body/query. Nó theo dõi spec.
+      </div>
+
+      <div class="note warn">
+        <strong>2. API không có OpenAPI thì khó theo dõi chính xác</strong>
+        Nếu nhà cung cấp không có OpenAPI/Swagger, DepWatch không có nguồn cấu trúc đáng tin
+        để diff endpoint, parameter và response schema.
+      </div>
+
+      <div class="note warn">
+        <strong>3. Private OpenAPI auth còn cần hoàn thiện</strong>
+        Thiết kế đã có chỗ lưu auth header cho private target, nhưng phần mã hóa secret thật
+        cần được triển khai nếu dùng môi trường production.
+      </div>
+
+      <div class="note warn">
+        <strong>4. Chưa tự động biết project công ty đang dùng dependency nào</strong>
+        Muốn đạt bài toán company dependency impact tracking, cần thêm module import/scan repo
+        để đọc <code>.csproj</code>, <code>package.json</code>, lockfile, requirements file...
+      </div>
+
+      <div class="note">
+        <strong>5. Vai trò đúng của hệ thống hiện tại</strong>
+        Có thể gọi chính xác là <strong>API/Library Change Tracker</strong> hoặc
+        <strong>API contract/spec change monitoring</strong>. Đây là nền tốt để mở rộng thành
+        hệ thống impact analysis cho dự án công ty.
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Kết Luận</h2>
+      <p>
+        DepWatch hiện tại có pipeline nền khá rõ: API lập lịch, RabbitMQ nối các bước,
+        Fetcher lấy dữ liệu, Diffing phân tích thay đổi, Notifier gửi cảnh báo.
+        Dữ liệu nghiệp vụ được lưu trong SQL Server, còn file snapshot lớn được lưu ở object storage.
+      </p>
+      <p>
+        Với API, hệ thống theo dõi tốt nhất khi nhà cung cấp có OpenAPI/Swagger spec.
+        Với thư viện, hệ thống theo dõi nguồn phát hành như registry hoặc GitHub release.
+        Để thành hệ thống theo dõi dependency thực tế trong công ty, bước tiếp theo là bổ sung
+        lớp project inventory và dependency discovery.
+      </p>
+    </section>
+  </main>
+</body>
+</html>
